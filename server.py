@@ -3,41 +3,54 @@ from mesa.visualization.ModularVisualization import ModularServer
 from model import BookstoreModel
 from agents import CustomerAgent, EmployeeAgent, BookAgent
 
-# --- 1. Strong CSS to Force Side-by-Side Layout ---
-class CssStyle(TextElement):
+# --- 1. Define the Toggle Button & Logic ---
+class ChartToggleButton(TextElement):
     def __init__(self):
         pass
 
     def render(self, model):
+        # We inject HTML for a button and JS to control the visibility
         return """
-        <style>
-        /* A. Break the narrow container limit */
-        .container, .container-fluid {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-            padding: 10px !important;
-        }
+        <div style='text-align: center; margin-top: 20px; margin-bottom: 20px;'>
+            <button id='toggleBtn' class='btn btn-primary' style='font-size: 16px; padding: 10px 20px;' onclick='toggleChartDisplay()'>
+                📊 Show/Hide Stock Chart
+            </button>
+        </div>
+        
+        <script>
+            var isChartVisible = false;
 
-        /* B. Force the main content row to use Flexbox */
-        .row {
-            display: flex !important;
-            flex-direction: row !important;
-            flex-wrap: nowrap !important; /* Do not allow wrapping */
-            justify-content: center !important;
-            align-items: flex-start !important;
-        }
+            // This function runs automatically to HIDE the chart initially
+            function initChartHiding() {
+                // Mesa puts visualization modules in divs. We assume the Chart is the LAST one.
+                // We target the main visualization containers
+                var rows = document.querySelectorAll(".row > div");
+                
+                if (rows.length > 0) {
+                    // The last element is the Chart (because we add it last in ModularServer)
+                    var chartContainer = rows[rows.length - 1]; 
+                    chartContainer.id = "myChartContainer"; // Give it an ID
+                    chartContainer.style.display = "none";  // Hide it
+                }
+            }
 
-        /* C. Force the individual elements (Grid & Chart) to split width */
-        /* We target the bootstrap columns Mesa generates */
-        .col-sm-12, .col-md-6, .col-lg-4 {
-            width: 48% !important;  /* Force nearly half width */
-            max-width: 48% !important;
-            flex: 0 0 48% !important;
-            display: block !important;
-            margin: 5px !important;
-        }
-        </style>
+            // This function runs when you click the button
+            function toggleChartDisplay() {
+                var chartContainer = document.getElementById("myChartContainer");
+                if (chartContainer) {
+                    if (isChartVisible) {
+                        chartContainer.style.display = "none";
+                        isChartVisible = false;
+                    } else {
+                        chartContainer.style.display = "block";
+                        isChartVisible = true;
+                    }
+                }
+            }
+
+            // Wait 1 second for Mesa to load everything, then hide the chart
+            setTimeout(initChartHiding, 1000);
+        </script>
         """
 
 # --- 2. Define Agent Visuals ---
@@ -66,18 +79,18 @@ def agent_portrayal(agent):
     return portrayal
 
 # --- 3. Setup Grid and Chart ---
-# CHANGED: Reduced grid size to 450x450 to ensure it fits side-by-side on laptops
-grid = CanvasGrid(agent_portrayal, 20, 20, 450, 450)
+grid = CanvasGrid(agent_portrayal, 20, 20, 500, 500)
 
 chart = ChartModule([{"Label": "Total Stock", "Color": "Black"}],
                     data_collector_name='datacollector')
 
 # --- 4. Launch ---
-# The order matters: CSS first, then Grid, then Chart.
+# Order: [Grid, Button, Chart]
+# The JS inside 'ChartToggleButton' will look for the LAST item (Chart) and hide it.
 server = ModularServer(BookstoreModel,
-                       [CssStyle(), grid, chart], 
+                       [grid, ChartToggleButton(), chart], 
                        "Bookstore Simulation",
                        {"N_customers": 5, "N_employees": 2, "width": 20, "height": 20})
 
-# CHANGED: Port updated to 8523 to avoid "Address already in use" error
-server.port = 9000
+# New Port to avoid errors
+server.port = 9001
