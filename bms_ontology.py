@@ -6,7 +6,7 @@ onto = get_ontology("http://test.org/bookstore.owl")
 
 def setup_ontology():
     with onto:
-        # --- Classes  ---
+        # --- Classes ---
         class Book(Thing):
             pass
         
@@ -25,7 +25,7 @@ def setup_ontology():
         class Inventory(Thing):
             pass
 
-        # --- Properties  ---
+        # --- Properties ---
         class has_price(Book >> float):
             pass
 
@@ -38,6 +38,10 @@ def setup_ontology():
         class has_author(Book >> str):
             pass
 
+        # !!! This was missing and caused the error !!!
+        class purchases(Customer >> Book):
+            pass
+
         class places_order(Customer >> Order):
             pass
             
@@ -47,16 +51,13 @@ def setup_ontology():
         class works_at(Employee >> Thing):
             pass
 
-        # --- SWRL Rules [cite: 23, 25, 26] ---
-        # Note: We define these as string rules in Owlready2. 
-        # These explain the logic of the system.
+        # --- SWRL Rules ---
         
         # Rule 1: If a customer places an order for a book, they have purchased it.
         rule1 = Imp()
         rule1.set_as_rule("""Customer(?c) ^ places_order(?c, ?o) ^ contains_book(?o, ?b) -> purchases(?c, ?b)""")
         
         # Rule 2: Low Stock Warning (Logic for Employee interaction)
-        # If a book has stock less than 3, it is a LowStockItem.
         rule2 = Imp()
         rule2.set_as_rule("""Book(?b) ^ has_stock(?b, ?s) ^ swrlb:lessThan(?s, 3) -> LowStockItem(?b)""")
 
