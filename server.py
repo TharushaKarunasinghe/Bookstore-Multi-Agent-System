@@ -3,7 +3,7 @@ from mesa.visualization.ModularVisualization import ModularServer
 from model import BookstoreModel
 from agents import CustomerAgent, EmployeeAgent, BookAgent
 
-# --- 1. Define the CSS Injection Class ---
+# --- 1. Strong CSS to Force Side-by-Side Layout ---
 class CssStyle(TextElement):
     def __init__(self):
         pass
@@ -11,29 +11,36 @@ class CssStyle(TextElement):
     def render(self, model):
         return """
         <style>
-        /* 1. Make the main container wide enough to hold both elements */
-        .container {
-            width: 98% !important;
-            max-width: 98% !important;
-        }
-        
-        /* 2. Target the rows/columns that Mesa generates */
-        /* We force them to be inline-blocks so they sit next to each other */
-        .row > div, .col-sm-12, .col-md-6, .col-lg-4 {
-            width: 48% !important;  /* Take up roughly half the screen */
-            display: inline-block !important;
-            vertical-align: top !important;
-            margin-right: 1%;
+        /* A. Break the narrow container limit */
+        .container, .container-fluid {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 10px !important;
         }
 
-        /* 3. Ensure the chart and grid fit inside these boxes */
-        canvas {
-            max-width: 100% !important;
+        /* B. Force the main content row to use Flexbox */
+        .row {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important; /* Do not allow wrapping */
+            justify-content: center !important;
+            align-items: flex-start !important;
+        }
+
+        /* C. Force the individual elements (Grid & Chart) to split width */
+        /* We target the bootstrap columns Mesa generates */
+        .col-sm-12, .col-md-6, .col-lg-4 {
+            width: 48% !important;  /* Force nearly half width */
+            max-width: 48% !important;
+            flex: 0 0 48% !important;
+            display: block !important;
+            margin: 5px !important;
         }
         </style>
         """
 
-# --- 2. Define the Agent Visuals ---
+# --- 2. Define Agent Visuals ---
 def agent_portrayal(agent):
     portrayal = {"Shape": "circle", "Filled": "true", "r": 0.5}
 
@@ -58,20 +65,19 @@ def agent_portrayal(agent):
 
     return portrayal
 
-# --- 3. Setup the Grid and Chart ---
-# Note: CanvasGrid(width, height, pixel_w, pixel_h)
-# We set pixel width slightly smaller to ensure it fits easily
-grid = CanvasGrid(agent_portrayal, 20, 20, 500, 500)
+# --- 3. Setup Grid and Chart ---
+# CHANGED: Reduced grid size to 450x450 to ensure it fits side-by-side on laptops
+grid = CanvasGrid(agent_portrayal, 20, 20, 450, 450)
 
 chart = ChartModule([{"Label": "Total Stock", "Color": "Black"}],
                     data_collector_name='datacollector')
 
-# --- 4. Launch the Server ---
-# IMPORTANT: The order in the list determines the order on screen.
-# [CssStyle(), grid, chart] -> CSS loads, then Grid (Left), then Chart (Right)
+# --- 4. Launch ---
+# The order matters: CSS first, then Grid, then Chart.
 server = ModularServer(BookstoreModel,
                        [CssStyle(), grid, chart], 
                        "Bookstore Simulation",
                        {"N_customers": 5, "N_employees": 2, "width": 20, "height": 20})
 
-server.port = 8521
+# CHANGED: Port updated to 8523 to avoid "Address already in use" error
+server.port = 8523
