@@ -3,37 +3,40 @@ from mesa.time import RandomActivation
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 from agents import CustomerAgent, EmployeeAgent, BookAgent
+from bms_ontology import save_ontology
 
 class BookstoreModel(Model):
-    """ A model with some number of agents. """
     def __init__(self, N_customers, N_employees, width, height):
         self.num_customers = N_customers
         self.num_employees = N_employees
         self.grid = MultiGrid(width, height, True)
         self.schedule = RandomActivation(self)
         self.running = True
-        
-        # Message Bus [cite: 27]
-        self.message_bus = []
+        self.message_bus = [] # Communication System 
 
-        # Create Book Agents (placed at fixed locations like shelves)
-        book_titles = ["Python 101", "AI Basics", "Mesa Guide", "Ontology 101"]
-        for i, title in enumerate(book_titles):
-            b = BookAgent(f"Book_{i}", self, title, price=20.0, initial_stock=5)
+        # Detailed Book Data for Ontology [cite: 14, 15]
+        book_data = [
+            {"title": "Python AI", "price": 45.0, "author": "J. Doe", "genre": "Tech"},
+            {"title": "Mesa Sim", "price": 30.0, "author": "A. Smith", "genre": "Tech"},
+            {"title": "Ontology 101", "price": 55.0, "author": "B. Russell", "genre": "Philosophy"},
+            {"title": "SciFi World", "price": 20.0, "author": "H. Wells", "genre": "Fiction"}
+        ]
+
+        # Create Book Agents
+        for i, data in enumerate(book_data):
+            b = BookAgent(f"Book_{i}", self, data["title"], data["price"], 5, data["author"], data["genre"])
             self.schedule.add(b)
-            # Place books in the middle
-            self.grid.place_agent(b, (5, 5 + i))
+            self.grid.place_agent(b, (5, 5 + (i * 2))) # Spread them out
 
-        # Create Customer Agents
+        # Create Customers
         for i in range(self.num_customers):
             a = CustomerAgent(f"Cust_{i}", self)
             self.schedule.add(a)
-            # Add the agent to a random grid cell
             x = self.random.randrange(self.grid.width)
             y = self.random.randrange(self.grid.height)
             self.grid.place_agent(a, (x, y))
 
-        # Create Employee Agents
+        # Create Employees
         for i in range(self.num_employees):
             e = EmployeeAgent(f"Emp_{i}", self)
             self.schedule.add(e)
@@ -48,6 +51,10 @@ class BookstoreModel(Model):
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()
-        # Print Message Bus for Debugging
-        if self.message_bus:
-            print(self.message_bus[-1]) # Print latest message
+        
+        # Print Message Bus to console (Evidence for interaction)
+        while self.message_bus:
+            msg = self.message_bus.pop(0)
+            print(f"[BUS]: {msg}")
+
+        # Save ontology periodically or at the end (here we just do it on stop manually)
