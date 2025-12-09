@@ -31,7 +31,7 @@ def agent_portrayal(agent):
 grid = CanvasGrid(agent_portrayal, 20, 20, 500, 500)
 
 # Create a chart to track stock levels
-chart = ChartModule([{"Label": "Stock", "Color": "Black"}],
+chart = ChartModule([{"Label": "Total Stock", "Color": "Black"}],
                     data_collector_name='datacollector')
 
 server = ModularServer(BookstoreModel,
