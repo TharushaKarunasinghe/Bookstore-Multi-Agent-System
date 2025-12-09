@@ -80,4 +80,4 @@ server = ModularServer(BookstoreModel,
                        {"N_customers": 5, "N_employees": 2, "width": 20, "height": 20})
 
 # CHANGED: Port updated to 8523 to avoid "Address already in use" error
-server.port = 8523
+server.port = 9000

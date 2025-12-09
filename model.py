@@ -15,6 +15,7 @@ def get_total_stock(model):
 
 class BookstoreModel(Model):
     def __init__(self, N_customers, N_employees, width, height):
+        super().__init__()
         self.num_customers = N_customers
         self.num_employees = N_employees
         self.grid = MultiGrid(width, height, True)
